@@ -1,0 +1,43 @@
+命令行 AI 聊天机器人
+不依赖任何第三方 SDK，基于 Python requests 手写 HTTP 请求调用 DeepSeek 大模型 API，实现的命令行多轮对话机器人。
+功能
+💬 多轮上下文对话：维护 messages 历史列表，每轮全量发送，模型具备连续对话记忆
+🛡️ 异常处理：HTTP 状态码校验（401/402 等错误友好提示）、网络超时与断网兜底，失败轮次不污染对话历史
+🔑 密钥安全管理：API Key 存放于本地 config.py 并通过 .gitignore 排除，不上传仓库
+技术栈
+Python 3
+requests（HTTP 请求）
+DeepSeek API（OpenAI 兼容接口，chat/completions）
+项目结构
+plaintext
+1   chat.py      # 主程序：对话循环、API 调用、异常处理
+2   config.py    # 本地配置：API_KEY（已被 .gitignore 忽略，不上传）
+3   .gitignore   # 忽略 config.py 与 __pycache__
+4
+chat.py      # 主程序：对话循环、API 调用、异常处理
+config.py    # 本地配置：API_KEY（已被 .gitignore 忽略，不上传）
+.gitignore   # 忽略 config.py 与 __pycache__
+
+快速开始
+克隆仓库后，在项目目录新建 config.py：
+python
+1   API_KEY = "你的 DeepSeek API Key"
+2
+API_KEY = "你的 DeepSeek API Key"
+
+安装依赖：
+bash
+1   pip install requests
+2
+pip install requests
+
+运行：
+bash
+1   python chat.py
+2
+python chat.py
+
+输入内容开始对话，输入 exit 退出。
+核心原理
+大模型本身是无状态的——它不会记住上一句说了什么。多轮对话的本质是：客户端维护一个 messages 列表，每轮把 system / user / assistant 三种角色的完整历史一起发给 API，模型根据全部上下文生成回答，再把回答追加回列表。这与 Coze、Dify 等智能体平台的会话记忆是同一原理。
+用扣子写文章
