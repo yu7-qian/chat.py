@@ -8,14 +8,51 @@ headers = {
     "Content-Type": "application/json"
 }
 
-# ① 真正执行的函数（这里用假数据，真实项目里调天气API）
+# ① 查询真实天气：先把城市名换成经纬度，再查天气（Open-Meteo 免费接口，无需 key）
 def get_weather(city):
-    weather_db = {
-        "北京": "晴，26℃，微风",
-        "上海": "小雨，23℃，记得带伞",
-        "广州": "多云，31℃，较热"
+    # 第 1 步：城市名 → 经纬度（地理编码）
+    geo_url = "https://geocoding-api.open-meteo.com/v1/search"
+    geo_resp = requests.get(
+        geo_url,
+        params={"name": city, "count": 1, "language": "zh", "format": "json"},
+        timeout=10
+    )
+    results = geo_resp.json().get("results")
+    if not results:
+        return f"没找到叫「{city}」的城市"
+
+    loc = results[0]
+    lat, lon = loc["latitude"], loc["longitude"]
+
+    # 第 2 步：经纬度 → 实时天气
+    weather_url = "https://api.open-meteo.com/v1/forecast"
+    weather_resp = requests.get(
+        weather_url,
+        params={
+            "latitude": lat,
+            "longitude": lon,
+            "current": "temperature_2m,weather_code,wind_speed_10m"
+        },
+        timeout=10
+    )
+    current = weather_resp.json()["current"]
+
+    # Open-Meteo 用数字代码表示天气，翻译成中文
+    code_map = {
+        0: "晴", 1: "大致晴朗", 2: "多云", 3: "阴天",
+        45: "雾", 48: "雾凇",
+        51: "小毛毛雨", 53: "毛毛雨", 55: "大毛毛雨",
+        61: "小雨", 63: "中雨", 65: "大雨",
+        71: "小雪", 73: "中雪", 75: "大雪",
+        80: "小阵雨", 81: "阵雨", 82: "强阵雨",
+        95: "雷阵雨", 96: "雷阵雨伴冰雹", 99: "强雷阵雨伴冰雹"
     }
-    return weather_db.get(city, f"暂无 {city} 的天气数据")
+    desc = code_map.get(current["weather_code"], "未知天气")
+
+    return (f"{loc['name']}当前{desc}，"
+            f"气温 {current['temperature_2m']}℃，"
+            f"风速 {current['wind_speed_10m']} km/h")
+            
 
 # ② 告诉模型：你有哪些工具可用（用 JSON 描述函数名、作用、参数）
 tools = [
@@ -23,7 +60,7 @@ tools = [
         "type": "function",
         "function": {
             "name": "get_weather",
-            "description": "查询指定城市的实时天气情况",
+            "description": "查询指定城市的实时天气情况，支持国内外城市，数据来自真实天气接口",
             "parameters": {
                 "type": "object",
                 "properties": {
