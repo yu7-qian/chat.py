@@ -8,6 +8,7 @@
 - 异常处理：HTTP 状态码校验（401/402 等错误友好提示）、网络超时与断网兜底，失败轮次不污染对话历史
 - 密钥安全管理：API Key 存放于本地 config.py 并通过 .gitignore 排除，不上传仓库
 - 流式输出：基于SSE逐块接收响应，实现打字机式实时输出
+- 函数调用（Function Calling）：模型自主判断是否调用外部工具，代码执行后将结果回传，实现"LLM 决策 + 工具执行"的最小智能体
 
 ## 技术栈
 
@@ -15,9 +16,10 @@
 - requests（HTTP 请求）
 - DeepSeek API（OpenAI 兼容接口，chat/completions）
 
-## 项目结构
+  ## 项目结构
 
-- chat.py：主程序，对话循环、API 调用、异常处理
+- chat.py：主程序，对话循环、API 调用、流式输出与异常处理
+- agent.py：函数调用版智能体，演示模型决策调用 get_weather 工具的完整两轮请求链路
 - config.py：本地配置，存放 API_KEY（已被 .gitignore 忽略，不上传）
 - .gitignore：忽略 config.py 与 __pycache__
 
